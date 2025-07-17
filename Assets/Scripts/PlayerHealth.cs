@@ -8,6 +8,8 @@ public class PlayerHealth : MonoBehaviourPun
     public float health = 100f;
     public PlayerStateMachine _playerStateMachine;  // Reference to your existing shield script
     public bool isLocalPlayer;
+
+    private bool isDead = false;
     void Start()
     {
         if (_playerStateMachine == null)
@@ -17,40 +19,42 @@ public class PlayerHealth : MonoBehaviourPun
     }
 
     [PunRPC]
-    public void TakeDamage(int damageAmount)
-    {
-        // If shield active, ignore damage
-        if (_playerStateMachine != null && _playerStateMachine.isShieldActive)
-        {
+    public void TakeDamage(int damageAmount, int attackerViewID) {
+        if (isDead) return; // Already dead, don't continue
+
+        if (_playerStateMachine != null && _playerStateMachine.isShieldActive) {
             Debug.Log("Shield is active! No damage taken.");
             return;
         }
 
         health -= damageAmount;
+        AudioManager.instance.PlaySFX(AudioManager.instance.damage);
+
         Debug.Log("Player health: " + health);
 
-        if (health <= 0)
-        {
+        if (health <= 0 && !isDead) {
+            isDead = true; // Set flag to prevent multiple triggers
             Debug.Log("Player died!");
+
+            PhotonView attackerView = PhotonView.Find(attackerViewID);
+
+            if (attackerView != null && attackerView.TryGetComponent(out PlayerStats killerStats)) {
+                attackerView.RPC("AddKill", RpcTarget.All);
+            }
+
+            if (TryGetComponent(out PlayerStats victimStats)) {
+                photonView.RPC("AddDeath", RpcTarget.All);
+            }
+
             Die();
-            if (isLocalPlayer) RoomManager.Instance.SpawnPlayer();
-            Destroy(gameObject);
         }
     }
 
-    void Die()
-    {
-        if (photonView.IsMine)
-        {
-            StartCoroutine(RespawnAfterDelay(5f));
-            if(gameObject != null ) PhotonNetwork.Destroy(gameObject);
-            
-        }
-    }
 
-    IEnumerator RespawnAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        FindObjectOfType<RoomManager>().SpawnPlayer();
+    void Die() {
+        if (photonView.IsMine) {
+            RoomManager.Instance.StartRespawnCountdown(); 
+            PhotonNetwork.Destroy(gameObject);            
+        }
     }
 }

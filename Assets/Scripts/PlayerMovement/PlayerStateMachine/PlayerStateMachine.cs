@@ -421,5 +421,7 @@ public class PlayerStateMachine : MonoBehaviourPun
             velocity.y = 0f;
     }
 
-
+    public void DisableControl() {
+        this.enabled = false; // or set a flag like canMove = false;
+    }
 }

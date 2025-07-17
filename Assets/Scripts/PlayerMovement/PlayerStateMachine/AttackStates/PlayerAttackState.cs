@@ -56,11 +56,19 @@ public class PlayerAttackState : PlayerBaseState
             // Apply damage
             if (hit.TryGetComponent<PlayerHealth>(out var health))
             {
-                health.transform.gameObject.GetComponent<PhotonView>().RPC("TakeDamage", RpcTarget.All, data.damage);
+                PhotonView targetView = health.GetComponent<PhotonView>();
+                PhotonView attackerView = ctx.GetComponent<PhotonView>(); // attacker = you
+
+                if (targetView != null && attackerView != null) {
+                    targetView.RPC("TakeDamage", RpcTarget.All, data.damage, attackerView.ViewID);
+                }
             }
-        
+
+            //Add Sound
+            AudioManager.instance.PlaySFX(AudioManager.instance.attack);
+
             // Apply force if it has Rigidbody
-        
+
             if (hit.attachedRigidbody != null)
             {
                 Vector3 pushDir = (hit.transform.position - origin.position).normalized;

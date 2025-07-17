@@ -41,6 +41,14 @@ MonoBehaviour:
   - RespawnSpaceship
   - TakeDamage
   - SetPlayerName
+  - SyncStartTime
+  - EndGameRPC
+  - StartGameRPC
+  - UpdateTimeRPC
+  - AddDeath
+  - AddKill
+  - SyncLeaderboard
+  - ReceiveStatUpdate
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
